@@ -46,6 +46,7 @@ namespace WAVM { namespace Runtime {
 	struct ExceptionType;
 }}
 
+#define KEEP_UNLOADED_MODULE_ADDRESSES_RESERVED 0
 #define PRINT_DISASSEMBLY 0
 
 using namespace WAVM;
@@ -74,9 +75,14 @@ struct LLVMJIT::ModuleMemoryManager : llvm::RTDyldMemoryManager
 		// Deregister the exception handling frame info.
 		deregisterEHFrames();
 
-		// Decommit the image pages, but leave them reserved to catch any references to them that
-		// might erroneously remain.
-		Platform::decommitVirtualPages(imageBaseAddress, numAllocatedImagePages);
+		if(!KEEP_UNLOADED_MODULE_ADDRESSES_RESERVED)
+		{ Platform::freeVirtualPages(imageBaseAddress, numAllocatedImagePages); }
+		else
+		{
+			// Decommit the image pages, but leave them reserved to catch any references to them
+			// that might erroneously remain.
+			Platform::decommitVirtualPages(imageBaseAddress, numAllocatedImagePages);
+		}
 	}
 
 	void registerEHFrames(U8* addr, U64 loadAddr, uintptr_t numBytes) override
@@ -88,6 +94,13 @@ struct LLVMJIT::ModuleMemoryManager : llvm::RTDyldMemoryManager
 			ehFramesAddr = addr;
 			ehFramesNumBytes = numBytes;
 		}
+	}
+	void registerFixedSEHFrames(U8* addr, Uptr numBytes)
+	{
+		Platform::registerEHFrames(imageBaseAddress, addr, numBytes);
+		hasRegisteredEHFrames = true;
+		ehFramesAddr = addr;
+		ehFramesNumBytes = numBytes;
 	}
 	void deregisterEHFrames() override
 	{
@@ -206,7 +219,7 @@ private:
 	Section readWriteSection;
 
 	bool hasRegisteredEHFrames;
-	U8* ehFramesAddr;
+	const U8* ehFramesAddr;
 	Uptr ehFramesNumBytes;
 
 	U8* allocateBytes(Uptr numBytes, Uptr alignment, Section& section)
@@ -419,9 +432,8 @@ Module::Module(const std::vector<U8>& inObjectBytes,
 						 xdataCopy,
 						 reinterpret_cast<Uptr>(trampolineBytes));
 
-		Platform::registerEHFrames(
-			memoryManager->getImageBaseAddress(),
-			reinterpret_cast<const U8*>(Uptr(loadedObject->getSectionLoadAddress(pdataSection))),
+		memoryManager->registerFixedSEHFrames(
+			reinterpret_cast<U8*>(Uptr(loadedObject->getSectionLoadAddress(pdataSection))),
 			pdataNumBytes);
 	}
 
