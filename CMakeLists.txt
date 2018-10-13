@@ -131,6 +131,8 @@ function(WAVM_SET_TARGET_OPTIONS TARGET_NAME)
 		target_compile_options(${TARGET_NAME} PRIVATE "/wd4324") # structure was padded due to alignment specifier
 		target_compile_options(${TARGET_NAME} PRIVATE "/wd4146") # unary minus operator applied to unsigned type, result still unsigned
 
+target_compile_options(${TARGET_NAME} PRIVATE "-D_GLIBCXX_USE_CXX11_ABI=0")
+
 	elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	
 		if(WAVM_ENABLE_LTO)
