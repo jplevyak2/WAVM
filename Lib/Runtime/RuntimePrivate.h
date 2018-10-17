@@ -205,6 +205,7 @@ namespace WAVM { namespace Runtime {
 	{
 		Uptr id = UINTPTR_MAX;
 		struct ContextRuntimeData* runtimeData = nullptr;
+    void* userData = nullptr;
 
 		Context(Compartment* inCompartment) : GCObject(ObjectKind::context, inCompartment) {}
 		~Context();

@@ -85,6 +85,16 @@ ContextRuntimeData* Runtime::getContextRuntimeData(const Context* context)
 	return context->runtimeData;
 }
 
+void* Runtime::getUserData(const Context* context)
+{
+	return context->userData;
+}
+
+void Runtime::setUserData(Context* context, void* userData)
+{
+	context->userData = userData;
+}
+
 ModuleInstance* Runtime::getModuleInstanceFromRuntimeData(ContextRuntimeData* contextRuntimeData,
 														  Uptr moduleInstanceId)
 {
